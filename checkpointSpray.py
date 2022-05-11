@@ -87,7 +87,7 @@ def spray(url, usernameList, passwordList, attempt, loop):
     passwords = open(passwordList, "r")
     for password in passwords:
         passwd = (password.strip("\n"))
-        print("\n########### Starting with password : "+passwd+" ########### Counter = "+ str(counter) +"\n")
+        print("\n########### Starting with password : "+passwd+" ########### Attempt = "+ str(counter) +"\n")
                 
         users = open(usernameList, "r")    
         encryptedpass = pubkey(passwd)
