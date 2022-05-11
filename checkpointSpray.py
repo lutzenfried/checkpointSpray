@@ -83,7 +83,7 @@ def encrypt(password,pubkey) :
 
 
 def spray(url, usernameList, passwordList, attempt, loop):
-    counter = 0
+    counter = 1
     passwords = open(passwordList, "r")
     for password in passwords:
         passwd = (password.strip("\n"))
@@ -109,7 +109,7 @@ def spray(url, usernameList, passwordList, attempt, loop):
                 pass
 
         counter = counter + 1
-        if counter >= attempt:
+        if counter > attempt:
             print("\n.......... Sleeping for "+ str(loop) + "min after password : " + passwd + "..........")        
             time.sleep(loop*60)
         else:
